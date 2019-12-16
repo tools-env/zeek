@@ -202,7 +202,7 @@ public:
 	 * Whether to permit a weird to carry on through the full reporter/weird
 	 * framework.
 	 */
-	bool PermitWeird(const char* name, uint64_t threshold, uint64_t rate,
+	bool PermitWeird(std::string_view name, uint64_t threshold, uint64_t rate,
 	                 double duration);
 
 protected:
@@ -297,7 +297,7 @@ protected:
 	 */
 	void DeliverStream(const u_char* data, uint64_t len);
 
-	/** 
+	/**
 	 * Perform chunk-wise delivery for analyzers that need it.
 	 */
 	void DeliverChunk(const u_char* data, uint64_t len, uint64_t offset);

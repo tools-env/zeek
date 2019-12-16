@@ -83,10 +83,10 @@ public:
 
 	// Report a traffic weirdness, i.e., an unexpected protocol situation
 	// that may lead to incorrectly processing a connnection.
-	void Weird(const char* name, const char* addl = "");	// Raises net_weird().
-	void Weird(file_analysis::File* f, const char* name, const char* addl = "");	// Raises file_weird().
-	void Weird(Connection* conn, const char* name, const char* addl = "");	// Raises conn_weird().
-	void Weird(const IPAddr& orig, const IPAddr& resp, const char* name, const char* addl = "");	// Raises flow_weird().
+	void Weird(std::string_view name, std::string_view addl = "");	// Raises net_weird().
+	void Weird(file_analysis::File* f, std::string_view name, std::string_view addl = "");	// Raises file_weird().
+	void Weird(Connection* conn, std::string_view name, std::string_view addl = "");	// Raises conn_weird().
+	void Weird(const IPAddr& orig, const IPAddr& resp, std::string_view name, std::string_view addl = "");	// Raises flow_weird().
 
 	// Syslog a message. This methods does nothing if we're running
 	// offline from a trace.
@@ -132,7 +132,7 @@ public:
 	/**
 	 * Reset/cleanup state tracking for a "net" weird.
 	 */
-	void ResetNetWeird(const std::string& name);
+	void ResetNetWeird(std::string_view name);
 
 	/**
 	 * Reset/cleanup state tracking for a "flow" weird.
@@ -247,11 +247,11 @@ private:
 	// WeirdHelper doesn't really have to be variadic, but it calls DoLog
 	// and that takes va_list anyway.
 	void WeirdHelper(EventHandlerPtr event, val_list vl, const char* fmt_name, ...) __attribute__((format(printf, 4, 5)));;
-	void UpdateWeirdStats(const char* name);
-	inline bool WeirdOnSamplingWhiteList(const char* name)
-		{ return weird_sampling_whitelist.find(name) != weird_sampling_whitelist.end(); }
-	bool PermitNetWeird(const char* name);
-	bool PermitFlowWeird(const char* name, const IPAddr& o, const IPAddr& r);
+	void UpdateWeirdStats(std::string_view name);
+	inline bool WeirdOnSamplingWhiteList(std::string_view name)
+		{ return weird_sampling_whitelist.find(std::string(name)) != weird_sampling_whitelist.end(); }
+	bool PermitNetWeird(std::string_view name);
+	bool PermitFlowWeird(std::string_view name, const IPAddr& o, const IPAddr& r);
 
 	bool EmitToStderr(bool flag)
 		{ return flag || ! after_zeek_init; }

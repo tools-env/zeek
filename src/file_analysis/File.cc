@@ -649,7 +649,7 @@ void File::FileEvent(EventHandlerPtr h, val_list vl)
 		}
 	}
 
-bool File::PermitWeird(const char* name, uint64_t threshold, uint64_t rate,
+bool File::PermitWeird(std::string_view name, uint64_t threshold, uint64_t rate,
                        double duration)
 	{
 	return ::PermitWeird(weird_state, name, threshold, rate, duration);

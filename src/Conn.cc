@@ -527,10 +527,10 @@ void Connection::ConnectionEvent(EventHandlerPtr f, analyzer::Analyzer* a, val_l
 	delete vl;
 	}
 
-void Connection::Weird(const char* name, const char* addl)
+void Connection::Weird(std::string_view name, std::string_view addl)
 	{
 	weird = 1;
-	reporter->Weird(this, name, addl ? addl : "");
+	reporter->Weird(this, name, addl);
 	}
 
 void Connection::AddTimer(timer_func timer, double t, int do_expire,
@@ -731,7 +731,7 @@ void Connection::CheckFlowLabel(bool is_orig, uint32_t flow_label)
 		saw_first_resp_packet = 1;
 	}
 
-bool Connection::PermitWeird(const char* name, uint64_t threshold, uint64_t rate,
+bool Connection::PermitWeird(std::string_view name, uint64_t threshold, uint64_t rate,
                              double duration)
 	{
 	return ::PermitWeird(weird_state, name, threshold, rate, duration);

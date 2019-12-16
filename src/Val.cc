@@ -977,12 +977,7 @@ StringVal::StringVal(int length, const char* s) : Val(TYPE_STRING)
 	val.string_val = new BroString((const u_char*)  s, length, 1);
 	}
 
-StringVal::StringVal(const char* s) : Val(TYPE_STRING)
-	{
-	val.string_val = new BroString(s);
-	}
-
-StringVal::StringVal(const string& s) : Val(TYPE_STRING)
+StringVal::StringVal(std::string_view s) : Val(TYPE_STRING)
 	{
 	val.string_val = new BroString(reinterpret_cast<const u_char*>(s.data()), s.length(), 1);
 	}

@@ -620,8 +620,7 @@ protected:
 class StringVal : public Val {
 public:
 	explicit StringVal(BroString* s);
-	explicit StringVal(const char* s);
-	explicit StringVal(const string& s);
+	explicit StringVal(std::string_view s);
 	StringVal(int length, const char* s);
 
 	Val* SizeVal() const override

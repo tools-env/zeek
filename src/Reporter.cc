@@ -227,15 +227,15 @@ void Reporter::WeirdHelper(EventHandlerPtr event, val_list vl, const char* fmt_n
 	va_end(ap);
 	}
 
-void Reporter::UpdateWeirdStats(const char* name)
+void Reporter::UpdateWeirdStats(std::string_view name)
 	{
 	++weird_count;
-	++weird_count_by_type[name];
+	++weird_count_by_type[string(name)];
 	}
 
 class NetWeirdTimer : public Timer {
 public:
-	NetWeirdTimer(double t, const char* name, double timeout)
+	NetWeirdTimer(double t, std::string_view name, double timeout)
 	: Timer(t + timeout, TIMER_NET_WEIRD_EXPIRE), weird_name(name)
 		{}
 
@@ -259,9 +259,9 @@ public:
 	IPPair endpoints;
 };
 
-void Reporter::ResetNetWeird(const std::string& name)
+void Reporter::ResetNetWeird(std::string_view name)
 	{
-	net_weird_state.erase(name);
+	net_weird_state.erase(string(name));
 	}
 
 void Reporter::ResetFlowWeird(const IPAddr& orig, const IPAddr& resp)
@@ -269,9 +269,9 @@ void Reporter::ResetFlowWeird(const IPAddr& orig, const IPAddr& resp)
 	flow_weird_state.erase(std::make_pair(orig, resp));
 	}
 
-bool Reporter::PermitNetWeird(const char* name)
+bool Reporter::PermitNetWeird(std::string_view name)
 	{
-	auto& count = net_weird_state[name];
+	auto& count = net_weird_state[string(name)];
 	++count;
 
 	if ( count == 1 )
@@ -288,7 +288,7 @@ bool Reporter::PermitNetWeird(const char* name)
 		return false;
 	}
 
-bool Reporter::PermitFlowWeird(const char* name,
+bool Reporter::PermitFlowWeird(std::string_view name,
                                const IPAddr& orig, const IPAddr& resp)
 	{
 	auto endpoints = std::make_pair(orig, resp);
@@ -298,7 +298,7 @@ bool Reporter::PermitFlowWeird(const char* name,
 		timer_mgr->Add(new FlowWeirdTimer(network_time, endpoints,
 		                                  weird_sampling_duration));
 
-	auto& count = map[name];
+	auto& count = map[string(name)];
 	++count;
 
 	if ( count <= weird_sampling_threshold )
@@ -311,7 +311,7 @@ bool Reporter::PermitFlowWeird(const char* name,
 		return false;
 	}
 
-void Reporter::Weird(const char* name, const char* addl)
+void Reporter::Weird(std::string_view name, std::string_view addl)
 	{
 	UpdateWeirdStats(name);
 
@@ -321,10 +321,10 @@ void Reporter::Weird(const char* name, const char* addl)
 			return;
 		}
 
-	WeirdHelper(net_weird, {new StringVal(addl)}, "%s", name);
+	WeirdHelper(net_weird, {new StringVal(addl)}, "%s", name.data());
 	}
 
-void Reporter::Weird(file_analysis::File* f, const char* name, const char* addl)
+void Reporter::Weird(file_analysis::File* f, std::string_view name, std::string_view addl)
 	{
 	UpdateWeirdStats(name);
 
@@ -336,10 +336,10 @@ void Reporter::Weird(file_analysis::File* f, const char* name, const char* addl)
 		}
 
 	WeirdHelper(file_weird, {f->GetVal()->Ref(), new StringVal(addl)},
-	            "%s", name);
+	            "%s", name.data());
 	}
 
-void Reporter::Weird(Connection* conn, const char* name, const char* addl)
+void Reporter::Weird(Connection* conn, std::string_view name, std::string_view addl)
 	{
 	UpdateWeirdStats(name);
 
@@ -351,10 +351,10 @@ void Reporter::Weird(Connection* conn, const char* name, const char* addl)
 		}
 
 	WeirdHelper(conn_weird, {conn->BuildConnVal(), new StringVal(addl)},
-	            "%s", name);
+	            "%s", name.data());
 	}
 
-void Reporter::Weird(const IPAddr& orig, const IPAddr& resp, const char* name, const char* addl)
+void Reporter::Weird(const IPAddr& orig, const IPAddr& resp, std::string_view name, std::string_view addl)
 	{
 	UpdateWeirdStats(name);
 
@@ -366,7 +366,7 @@ void Reporter::Weird(const IPAddr& orig, const IPAddr& resp, const char* name, c
 
 	WeirdHelper(flow_weird,
 	            {new AddrVal(orig), new AddrVal(resp), new StringVal(addl)},
-	            "%s", name);
+	            "%s", name.data());
 	}
 
 void Reporter::DoLog(const char* prefix, EventHandlerPtr event, FILE* out,

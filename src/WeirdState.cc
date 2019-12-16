@@ -1,10 +1,10 @@
 #include "WeirdState.h"
 #include "Net.h"
 
-bool PermitWeird(WeirdStateMap& wsm, const char* name, uint64_t threshold,
+bool PermitWeird(WeirdStateMap& wsm, std::string_view name, uint64_t threshold,
                  uint64_t rate, double duration)
     {
-	auto& state = wsm[name];
+    auto& state = wsm[string(name)];
 	++state.count;
 
 	if ( state.count <= threshold )

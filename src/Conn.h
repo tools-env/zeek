@@ -206,7 +206,7 @@ public:
 	void ConnectionEventFast(EventHandlerPtr f, analyzer::Analyzer* analyzer,
 				val_list vl);
 
-	void Weird(const char* name, const char* addl = "");
+	void Weird(std::string_view name, std::string_view addl = "");
 	bool DidWeird() const	{ return weird != 0; }
 
 	// Cancel all associated timers.
@@ -293,7 +293,7 @@ public:
 	uint32_t GetOrigFlowLabel() { return orig_flow_label; }
 	uint32_t GetRespFlowLabel() { return resp_flow_label; }
 
-	bool PermitWeird(const char* name, uint64_t threshold, uint64_t rate,
+	bool PermitWeird(std::string_view name, uint64_t threshold, uint64_t rate,
 	                 double duration);
 
 protected:
