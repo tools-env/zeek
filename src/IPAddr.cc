@@ -100,12 +100,11 @@ void IPAddr::ReverseMask(int top_bits_to_chop)
 		p[i] &= mask_bits[i];
 	}
 
-bool IPAddr::ConvertString(const char* s, in6_addr* result)
+bool IPAddr::ConvertString(std::string_view s, in6_addr* result)
 	{
-	for ( auto p = s; *p; ++p )
-		if ( *p == ':' )
-			// IPv6
-			return (inet_pton(AF_INET6, s, result->s6_addr) == 1);
+	if ( s.find(':') != string_view::npos )
+		// IPv6
+		return (inet_pton(AF_INET6, s.data(), result->s6_addr) == 1);
 
 	// IPv4
 	// Parse the address directly instead of using inet_pton since
@@ -113,7 +112,7 @@ bool IPAddr::ConvertString(const char* s, in6_addr* result)
 	// that can't e.g. handle leading zeroes.
 	int a[4];
 	int n = 0;
-	int match_count = sscanf(s, "%d.%d.%d.%d%n", a+0, a+1, a+2, a+3, &n);
+	int match_count = sscanf(s.data(), "%d.%d.%d.%d%n", a+0, a+1, a+2, a+3, &n);
 
 	if ( match_count != 4 )
 		return false;
@@ -132,11 +131,11 @@ bool IPAddr::ConvertString(const char* s, in6_addr* result)
 	return true;
 	}
 
-void IPAddr::Init(const char* s)
+void IPAddr::Init(std::string_view s)
 	{
 	if ( ! ConvertString(s, &in6) )
 		{
-		reporter->Error("Bad IP address: %s", s);
+		reporter->Error("Bad IP address: %s", s.data());
 		memset(in6.s6_addr, 0, sizeof(in6.s6_addr));
 		}
 	}
@@ -290,12 +289,15 @@ string IPPrefix::AsString() const
 	return prefix.AsString() +"/" + l;
 	}
 
-bool IPPrefix::ConvertString(const char* text, IPPrefix* result)
+bool IPPrefix::ConvertString(std::string_view text, IPPrefix* result)
 	{
-	string s(text);
+	// Convert to a string here. This ensures that the string passed down to IPAddr::ConvertString is actually
+	// the substring. substr() on a string_view just modifies the size value, not the string itself. If you call
+	// data() on that substring, it's not actually truncated.
+	std::string s(text);
 	size_t slash_loc = s.find('/');
 
-	if ( slash_loc == string::npos )
+	if ( slash_loc == string_view::npos )
 		return false;
 
 	auto ip_str = s.substr(0, slash_loc);
@@ -303,7 +305,7 @@ bool IPPrefix::ConvertString(const char* text, IPPrefix* result)
 
 	in6_addr tmp;
 
-	if ( ! IPAddr::ConvertString(ip_str.data(), &tmp) )
+	if ( ! IPAddr::ConvertString(ip_str, &tmp) )
 		return false;
 
 	auto ip = IPAddr(tmp);

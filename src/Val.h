@@ -567,8 +567,7 @@ protected:
 
 class AddrVal : public Val {
 public:
-	explicit AddrVal(const char* text);
-	explicit AddrVal(const std::string& text);
+	explicit AddrVal(std::string_view text);
 	~AddrVal() override;
 
 	Val* SizeVal() const override;
@@ -591,8 +590,8 @@ protected:
 
 class SubNetVal : public Val {
 public:
-	explicit SubNetVal(const char* text);
-	SubNetVal(const char* text, int width);
+	explicit SubNetVal(std::string_view text);
+	SubNetVal(std::string_view text, int width);
 	SubNetVal(uint32_t addr, int width); // IPv4.
 	SubNetVal(const uint32_t addr[4], int width); // IPv6.
 	SubNetVal(const IPAddr& addr, int width);
@@ -620,7 +619,7 @@ protected:
 class StringVal : public Val {
 public:
 	explicit StringVal(BroString* s);
-	explicit StringVal(std::string_view s);
+	StringVal(std::string_view s);
 	StringVal(int length, const char* s);
 
 	Val* SizeVal() const override

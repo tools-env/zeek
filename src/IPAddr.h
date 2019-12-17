@@ -91,20 +91,9 @@ public:
 	 * @param s String containing an IP address as either a dotted IPv4
 	 * address or a hex IPv6 address.
 	 */
-	IPAddr(const std::string& s)
+	IPAddr(std::string_view s)
 		{
 		Init(s.data());
-		}
-
-	/**
-	 * Constructs an address instance from a string representation.
-	 *
-	 * @param s ASCIIZ string containing an IP address as either a
-	 * dotted IPv4 address or a hex IPv6 address.
-	 */
-	IPAddr(const char* s)
-		{
-		Init(s);
 		}
 
 	/**
@@ -416,14 +405,14 @@ public:
 	 *
 	 * @return whether the conversion was successful.
 	 */
-	static bool ConvertString(const char* s, in6_addr* result);
+	static bool ConvertString(std::string_view s, in6_addr* result);
 
 	/**
 	 * @param s the IPv4 or IPv6 string to convert (ASCII, NUL-terminated).
 	 *
 	 * @return whether the string is a valid IP address
 	 */
-	static bool IsValid(const char* s)
+	static bool IsValid(std::string_view s)
 		{
 		in6_addr tmp;
 		return ConvertString(s, &tmp);
@@ -448,7 +437,7 @@ private:
 	 * @param s String containing an IP address as either a dotted IPv4
 	 * address or a hex IPv6 address (ASCII, NUL-terminated).
 	 */
-	void Init(const char* s);
+	void Init(std::string_view s);
 
 	in6_addr in6; // IPv6 or v4-to-v6-mapped address
 
@@ -718,14 +707,14 @@ public:
 	 *
 	 * @return whether the conversion was successful.
 	 */
-	static bool ConvertString(const char* s, IPPrefix* result);
+	static bool ConvertString(std::string_view s, IPPrefix* result);
 
 	/**
 	 * @param s the IPv4 or IPv6 prefix string to convert (ASCII, NUL-terminated).
 	 *
 	 * @return whether the string is a valid IP address prefix
 	 */
-	static bool IsValid(const char* s)
+	static bool IsValid(std::string_view s)
 		{
 		IPPrefix tmp;
 		return ConvertString(s, &tmp);

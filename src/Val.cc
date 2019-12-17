@@ -809,12 +809,7 @@ Val* PortVal::DoClone(CloneState* state)
 	return Ref();
 	}
 
-AddrVal::AddrVal(const char* text) : Val(TYPE_ADDR)
-	{
-	val.addr_val = new IPAddr(text);
-	}
-
-AddrVal::AddrVal(const std::string& text) : Val(TYPE_ADDR)
+AddrVal::AddrVal(std::string_view text) : Val(TYPE_ADDR)
 	{
 	val.addr_val = new IPAddr(text);
 	}
@@ -859,15 +854,15 @@ Val* AddrVal::DoClone(CloneState* state)
 	return Ref();
 	}
 
-SubNetVal::SubNetVal(const char* text) : Val(TYPE_SUBNET)
+SubNetVal::SubNetVal(std::string_view text) : Val(TYPE_SUBNET)
 	{
 	val.subnet_val = new IPPrefix();
 
 	if ( ! IPPrefix::ConvertString(text, val.subnet_val) )
-		reporter->Error("Bad string in SubNetVal ctor: %s", text);
+		reporter->Error("Bad string in SubNetVal ctor: %s", text.data());
 	}
 
-SubNetVal::SubNetVal(const char* text, int width) : Val(TYPE_SUBNET)
+SubNetVal::SubNetVal(std::string_view text, int width) : Val(TYPE_SUBNET)
 	{
 	val.subnet_val = new IPPrefix(text, width);
 	}
