@@ -1784,7 +1784,7 @@ global_or_event_id:
 				{
 				const char* module_name =
 					resolving_global_ID ?
-						current_module.c_str() : 0;
+						current_module.c_str() : "";
 
 				$$ = install_ID($1, module_name,
 						true, is_export);

@@ -644,7 +644,7 @@ static int load_files(const char* orig_file)
 		if ( file_path.empty() )
 			reporter->FatalError("can't find %s", orig_file);
 
-		if ( is_dir(file_path.c_str()) )
+		if ( is_dir(file_path) )
 			f = open_package(file_path);
 		else
 			f = open_file(file_path);

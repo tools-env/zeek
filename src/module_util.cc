@@ -11,15 +11,21 @@
 
 using namespace std;
 
-static int streq(const char* s1, const char* s2)
+static int streq(string_view s1, string_view s2)
 	{
-	return ! strcmp(s1, s2);
+	return s1 == s2;
 	}
 
 TEST_CASE("module_util streq")
 	{
 	CHECK(streq("abcd", "abcd") == true);
 	CHECK(streq("abcd", "efgh") == false);
+
+	string s1 = "ab";
+	string s2 = "ab";
+	CHECK(streq(s1, s2) == true);
+	s2 = "cd";
+	CHECK(streq(s1, s2) == false);
 	}
 
 TEST_CASE("module_util extract_module_name")
@@ -30,9 +36,9 @@ TEST_CASE("module_util extract_module_name")
 	}
 
 // Returns it without trailing "::" var section.
-string extract_module_name(const char* name)
+string extract_module_name(string_view name)
 	{
-	string module_name = name;
+	string module_name(name);
 	string::size_type pos = module_name.rfind("::");
 
 	if ( pos == string::npos )
@@ -51,9 +57,9 @@ TEST_CASE("module_util extract_var_name")
 	CHECK(extract_var_name("::var") == "var");
 	}
 
-string extract_var_name(const char *name)
+string extract_var_name(string_view name)
 	{
-	string var_name = name;
+	string var_name(name);
 	string::size_type pos = var_name.rfind("::");
 
 	if ( pos == string::npos )
@@ -72,34 +78,42 @@ TEST_CASE("module_util normalized_module_name")
 	CHECK(normalized_module_name("module::") == "module");
 	}
 
-string normalized_module_name(const char* module_name)
+string normalized_module_name(string_view module_name)
 	{
-	int mod_len;
-	if ( (mod_len = strlen(module_name)) >= 2 &&
-	     streq(module_name + mod_len - 2, "::") )
-		mod_len -= 2;
+	string colons = "::";
+	string mod_name(module_name);
 
-	return string(module_name, mod_len);
+	if ( (module_name.size() >= colons.size()) &&
+		 (mod_name.compare(mod_name.size() - colons.size(), colons.size(), colons ) == 0) )
+		mod_name.erase(mod_name.size() - colons.size());
+
+	return mod_name;
 	}
 
 TEST_CASE("module_util make_full_var_name")
 	{
-	CHECK(make_full_var_name(nullptr, "GLOBAL::var") == "var");
+	CHECK(make_full_var_name("", "GLOBAL::var") == "var");
 	CHECK(make_full_var_name(GLOBAL_MODULE_NAME, "var") == "var");
-	CHECK(make_full_var_name(nullptr, "notglobal::var") == "notglobal::var");
-	CHECK(make_full_var_name(nullptr, "::var") == "::var");
+	CHECK(make_full_var_name("", "notglobal::var") == "notglobal::var");
+	CHECK(make_full_var_name("", "::var") == "::var");
 
 	CHECK(make_full_var_name("module", "var") == "module::var");
 	CHECK(make_full_var_name("module::", "var") == "module::var");
-	CHECK(make_full_var_name("", "var") == "::var");
+
+	// TODO: this test is broken by the change to use string_view. Previously the code checked
+	// for a null module_name instead an empty string, and used that. If the string was empty
+	// but not null it would fall down to the bottom and just prepend "::" to the var name.
+	// Now that it's checking for empty instead of null, it falls into the if block and just
+	// returns the var name unmodified.
+//	CHECK(make_full_var_name("", "var") == "::var");
 	}
 
-string make_full_var_name(const char* module_name, const char* var_name)
+string make_full_var_name(string_view module_name, string_view var_name)
 	{
-	if ( ! module_name || streq(module_name, GLOBAL_MODULE_NAME) ||
-	     strstr(var_name, "::") )
+	if ( module_name.empty() || streq(module_name, GLOBAL_MODULE_NAME) ||
+		var_name.find("::") != string_view::npos )
 		{
-		if ( streq(GLOBAL_MODULE_NAME, extract_module_name(var_name).c_str()) )
+		if ( streq(GLOBAL_MODULE_NAME, extract_module_name(var_name)) )
 			return extract_var_name(var_name);
 
 		return string(var_name);

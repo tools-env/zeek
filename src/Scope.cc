@@ -117,12 +117,12 @@ TraversalCode Scope::Traverse(TraversalCallback* cb) const
 	}
 
 
-ID* lookup_ID(const char* name, const char* curr_module, bool no_global,
+ID* lookup_ID(string_view name, string_view curr_module, bool no_global,
 	      bool same_module_only, bool check_export)
 	{
 	string fullname = make_full_var_name(curr_module, name);
 
-	string ID_module = extract_module_name(fullname.c_str());
+	string ID_module = extract_module_name(fullname);
 	bool need_export = check_export && (ID_module != GLOBAL_MODULE_NAME &&
 	                                    ID_module != curr_module);
 
@@ -140,7 +140,7 @@ ID* lookup_ID(const char* name, const char* curr_module, bool no_global,
 			}
 		}
 
-	if ( ! no_global && (strcmp(GLOBAL_MODULE_NAME, curr_module) == 0 ||
+	if ( ! no_global && (strcmp(GLOBAL_MODULE_NAME, curr_module.data()) == 0 ||
 			     ! same_module_only) )
 		{
 		string globalname = make_full_var_name(GLOBAL_MODULE_NAME, name);
@@ -155,14 +155,14 @@ ID* lookup_ID(const char* name, const char* curr_module, bool no_global,
 	return 0;
 	}
 
-ID* install_ID(const char* name, const char* module_name,
+ID* install_ID(string_view name, string_view module_name,
 		bool is_global, bool is_export)
 	{
 	if ( scopes.length() == 0 && ! is_global )
 		reporter->InternalError("local identifier in global scope");
 
 	IDScope scope;
-	if ( is_export || ! module_name ||
+	if ( is_export || module_name.empty() ||
 	     (is_global &&
 	      normalized_module_name(module_name) == GLOBAL_MODULE_NAME) )
 		scope = SCOPE_GLOBAL;

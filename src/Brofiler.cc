@@ -87,7 +87,7 @@ bool Brofiler::WriteStats()
 
 	SafeDirname dirname{bf};
 
-	if ( ! ensure_intermediate_dirs(dirname.result.data()) )
+	if ( ! ensure_intermediate_dirs(dirname.result) )
 		{
 		reporter->Error("Failed to open ZEEK_PROFILER_FILE destination '%s' for writing", bf);
 		return false;
@@ -147,4 +147,3 @@ bool Brofiler::WriteStats()
 	fclose(f);
 	return true;
 	}
-

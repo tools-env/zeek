@@ -134,29 +134,25 @@ TEST_CASE("util get_unescaped_string")
 std::string get_unescaped_string(const std::string& arg_str)
 	{
 	const char* str = arg_str.c_str();
-	char* buf = new char [arg_str.length() + 1]; // it will at most have the same length as str.
-	char* bufpos = buf;
 	size_t pos = 0;
+
+	// Reserve at least the length of the existing string. It might end up
+	// shorter, but this makes sure there won't be any resizes.
+	string outstring;
+	outstring.reserve(arg_str.length());
 
 	while ( pos < arg_str.length() )
 		{
 		if ( str[pos] == '\\' && str[pos+1] == 'x' &&
 		     isxdigit(str[pos+2]) && isxdigit(str[pos+3]) )
 			{
-				*bufpos = (decode_hex(str[pos+2]) << 4) +
-					decode_hex(str[pos+3]);
-
-				pos += 4;
-				bufpos++;
+			outstring.push_back((decode_hex(str[pos+2]) << 4) +
+				decode_hex(str[pos+3]));
+			pos += 4;
 			}
 		else
-			*bufpos++ = str[pos++];
+			outstring.push_back(str[pos++]);
 		}
-
-	*bufpos = 0;
-	string outstring(buf, bufpos - buf);
-
-	delete [] buf;
 
 	return outstring;
 	}
@@ -198,7 +194,7 @@ TEST_CASE("util get_escaped_string")
  * ASCII.
  * @return A ODesc object containing a list of escaped hex values of the form
  *         \x##, which may be newly allocated if \a d was a null pointer. */
-ODesc* get_escaped_string(ODesc* d, const char* str, size_t len,
+ODesc* get_escaped_string(ODesc* d, std::string_view str, size_t len,
                           bool escape_all)
 	{
 	if ( ! d )
@@ -227,7 +223,7 @@ ODesc* get_escaped_string(ODesc* d, const char* str, size_t len,
 	return d;
 	}
 
-std::string get_escaped_string(const char* str, size_t len, bool escape_all)
+std::string get_escaped_string(std::string_view str, size_t len, bool escape_all)
 	{
 	ODesc d;
 	return get_escaped_string(&d, str, len, escape_all)->Description();
@@ -247,13 +243,20 @@ TEST_CASE("util streq")
 	{
 	CHECK(streq("abcd", "abcd") == true);
 	CHECK(streq("abcd", "efgh") == false);
+
+	string s1 = "ab";
+	string s2 = "ab";
+	CHECK(streq(s1, s2) == true);
+	s2 = "cd";
+	CHECK(streq(s1, s2) == false);
 	}
 
-int streq(const char* s1, const char* s2)
+bool streq(std::string_view s1, std::string_view s2)
 	{
-	return ! strcmp(s1, s2);
+	return s1 == s2;
 	}
 
+/// TODO: needs test case
 int expand_escape(const char*& s)
 	{
 	switch ( *(s++) ) {
@@ -481,7 +484,7 @@ const char* strpbrk_n(size_t len, const char* s, const char* charset)
 		if ( strchr(charset, *p) )
 			return p;
 
-	return 0;
+	return nullptr;
 	}
 
 #ifndef HAVE_STRCASESTR
@@ -544,11 +547,11 @@ TEST_CASE("util atoi_n")
 template<class T> int atoi_n(int len, const char* s, const char** end, int base, T& result)
 	{
 	T n = 0;
-	int neg = 0;
+	bool neg = false;
 
 	if ( len > 0 && *s == '-' )
 		{
-		neg = 1;
+		neg = true;
 		--len; ++s;
 		}
 
@@ -697,9 +700,9 @@ TEST_CASE("util strtolower")
 	CHECK(strtolower(b) == "abcd");
 	}
 
-std::string strtolower(const std::string& s)
+std::string strtolower(std::string_view s)
 	{
-	std::string t = s;
+	std::string t(s);
 	std::transform(t.begin(), t.end(), t.begin(), ::tolower);
 	return t;
 	}
@@ -791,9 +794,9 @@ const char* fmt_access_time(double t)
 	return buf;
 	}
 
-bool ensure_intermediate_dirs(const char* dirname)
+bool ensure_intermediate_dirs(std::string_view dirname)
 	{
-	if ( ! dirname || strlen(dirname) == 0 )
+	if ( dirname.empty() )
 		return false;
 
 	bool absolute = dirname[0] == '/';
@@ -811,49 +814,49 @@ bool ensure_intermediate_dirs(const char* dirname)
 
 		current_dir += path_components[i];
 
-		if ( ! ensure_dir(current_dir.c_str()) )
+		if ( ! ensure_dir(current_dir) )
 			return false;
 		}
 
 	return true;
 	}
 
-bool ensure_dir(const char *dirname)
+bool ensure_dir(std::string_view dirname)
 	{
 	struct stat st;
-	if ( stat(dirname, &st) < 0 )
+	if ( stat(dirname.data(), &st) < 0 )
 		{
 		if ( errno != ENOENT )
 			{
 			reporter->Warning("can't stat directory %s: %s",
-				dirname, strerror(errno));
+				dirname.data(), strerror(errno));
 			return false;
 			}
 
-		if ( mkdir(dirname, 0700) < 0 )
+		if ( mkdir(dirname.data(), 0700) < 0 )
 			{
 			reporter->Warning("can't create directory %s: %s",
-				dirname, strerror(errno));
+				dirname.data(), strerror(errno));
 			return false;
 			}
 		}
 
 	else if ( ! S_ISDIR(st.st_mode) )
 		{
-		reporter->Warning("%s exists but is not a directory", dirname);
+		reporter->Warning("%s exists but is not a directory", dirname.data());
 		return false;
 		}
 
 	return true;
 	}
 
-bool is_dir(const std::string& path)
+bool is_dir(std::string_view path)
 	{
 	struct stat st;
-	if ( stat(path.c_str(), &st) < 0 )
+	if ( stat(path.data(), &st) < 0 )
 		{
 		if ( errno != ENOENT )
-			reporter->Warning("can't stat %s: %s", path.c_str(), strerror(errno));
+			reporter->Warning("can't stat %s: %s", path.data(), strerror(errno));
 
 		return false;
 		}
@@ -861,13 +864,13 @@ bool is_dir(const std::string& path)
 	return S_ISDIR(st.st_mode);
 	}
 
-bool is_file(const std::string& path)
+bool is_file(std::string_view path)
 	{
 	struct stat st;
-	if ( stat(path.c_str(), &st) < 0 )
+	if ( stat(path.data(), &st) < 0 )
 		{
 		if ( errno != ENOENT )
-			reporter->Warning("can't stat %s: %s", path.c_str(), strerror(errno));
+			reporter->Warning("can't stat %s: %s", path.data(), strerror(errno));
 
 		return false;
 		}
@@ -882,9 +885,9 @@ TEST_CASE("util strreplace")
 	CHECK(strreplace(s, "not ", "") == "this is a string");
 	}
 
-string strreplace(const string& s, const string& o, const string& n)
+string strreplace(string_view s, string_view o, string_view n)
 	{
-	string r = s;
+	string r(s);
 
 	while ( true )
 		{
@@ -911,12 +914,13 @@ TEST_CASE("util strstrip")
 	CHECK(strstrip(s) == "abcd");
 	}
 
-std::string strstrip(std::string s)
+std::string strstrip(std::string_view s)
 	{
+	string r(s);
 	auto notspace = [](unsigned char c) { return ! std::isspace(c); };
-	s.erase(s.begin(), std::find_if(s.begin(), s.end(), notspace));
-	s.erase(std::find_if(s.rbegin(), s.rend(), notspace).base(), s.end());
-	return s;
+	r.erase(r.begin(), std::find_if(r.begin(), r.end(), notspace));
+	r.erase(std::find_if(r.rbegin(), r.rend(), notspace).base(), r.end());
+	return r;
 	}
 
 bool hmac_key_set = false;
@@ -1183,12 +1187,13 @@ const std::string& bro_path()
 	return bro_path_value;
 	}
 
-extern void add_to_bro_path(const string& dir)
+extern void add_to_bro_path(string_view dir)
 	{
 	// Make sure path is initialized.
 	bro_path();
 
-	bro_path_value += string(":") + dir;
+	bro_path_value += ":";
+	bro_path_value += dir;
 	}
 
 const char* bro_plugin_path()
@@ -1233,9 +1238,9 @@ TEST_CASE("util is_package_loader")
 
 const array<string, 2> script_extensions = {".zeek", ".bro"};
 
-bool is_package_loader(const string& path)
+bool is_package_loader(string_view path)
 	{
-	string filename(std::move(SafeBasename(path).result));
+	string filename = std::move(SafeBasename(path.data()).result);
 
 	for ( const string& ext : script_extensions )
 		{
@@ -1246,12 +1251,12 @@ bool is_package_loader(const string& path)
 	return false;
 	}
 
-FILE* open_file(const string& path, const string& mode)
+FILE* open_file(string_view path, string_view mode)
 	{
 	if ( path.empty() )
 		return 0;
 
-	FILE* rval = fopen(path.c_str(), mode.c_str());
+	FILE* rval = fopen(path.data(), mode.data());
 
 	if ( ! rval )
 		{
@@ -1263,12 +1268,12 @@ FILE* open_file(const string& path, const string& mode)
 	return rval;
 	}
 
-static bool can_read(const string& path)
+static bool can_read(string_view path)
 	{
-	return access(path.c_str(), R_OK) == 0;
+	return access(path.data(), R_OK) == 0;
 	}
 
-FILE* open_package(string& path, const string& mode)
+FILE* open_package(string& path, string_view mode)
 	{
 	string arg_path = path;
 	path.append("/__load__");
@@ -1316,10 +1321,10 @@ TEST_CASE("util path ops")
 		}
 	}
 
-void SafePathOp::CheckValid(const char* op_result, const char* path,
+void SafePathOp::CheckValid(std::string_view op_result, std::string_view path,
                             bool error_aborts)
 	{
-	if ( op_result )
+	if ( ! op_result.empty() )
 		{
 		result = op_result;
 		error = false;
@@ -1328,7 +1333,7 @@ void SafePathOp::CheckValid(const char* op_result, const char* path,
 		{
 		if ( error_aborts )
 			reporter->InternalError("Path operation failed on %s: %s",
-			                        path ? path : "<null>", strerror(errno));
+				path.empty() ? "<null>" : path.data(), strerror(errno));
 		else
 			error = true;
 		}
@@ -1346,9 +1351,9 @@ SafeDirname::SafeDirname(const string& path, bool error_aborts)
 	DoFunc(path, error_aborts);
 	}
 
-void SafeDirname::DoFunc(const string& path, bool error_aborts)
+void SafeDirname::DoFunc(string_view path, bool error_aborts)
 	{
-	char* tmp = copy_string(path.c_str());
+	char* tmp = copy_string(path.data());
 	CheckValid(dirname(tmp), tmp, error_aborts);
 	delete [] tmp;
 	}
@@ -1365,9 +1370,9 @@ SafeBasename::SafeBasename(const string& path, bool error_aborts)
 	DoFunc(path, error_aborts);
 	}
 
-void SafeBasename::DoFunc(const string& path, bool error_aborts)
+void SafeBasename::DoFunc(string_view path, bool error_aborts)
 	{
-	char* tmp = copy_string(path.c_str());
+	char* tmp = copy_string(path.data());
 	CheckValid(basename(tmp), tmp, error_aborts);
 	delete [] tmp;
 	}
@@ -1383,7 +1388,7 @@ TEST_CASE("util implode_string_vector")
 	}
 
 string implode_string_vector(const std::vector<std::string>& v,
-                             const std::string& delim)
+                             std::string_view delim)
 	{
 	string rval;
 
@@ -1405,15 +1410,15 @@ TEST_CASE("util flatten_script_name")
 	CHECK(flatten_script_name("path/to/script", "") == "path.to.script");
 	}
 
-string flatten_script_name(const string& name, const string& prefix)
+string flatten_script_name(string_view name, string_view prefix)
 	{
-	string rval = prefix;
+	string rval(prefix);
 
 	if ( ! rval.empty() )
 		rval.append(".");
 
 	if ( is_package_loader(name) )
-		rval.append(SafeDirname(name).result);
+		rval.append(SafeDirname(name.data()).result);
 	else
 		rval.append(name);
 
@@ -1442,7 +1447,7 @@ TEST_CASE("util tokenize_string")
 	CHECK(v2.size() == 1);
 	}
 
-vector<string>* tokenize_string(string input, const string& delim,
+vector<string>* tokenize_string(string input, string_view delim,
                                 vector<string>* rval)
 	{
 	if ( ! rval )
@@ -1468,7 +1473,7 @@ TEST_CASE("util normalize_path")
 	CHECK(normalize_path("1/2/3/") == "1/2/3");
 	}
 
-string normalize_path(const string& path)
+string normalize_path(std::string_view path)
 	{
 	size_t n;
 	vector<string> components, final_components;
@@ -1477,7 +1482,7 @@ string normalize_path(const string& path)
 	if ( path[0] == '/' )
 		new_path = "/";
 
-	tokenize_string(path, "/", &components);
+	tokenize_string(string(path), "/", &components);
 
 	vector<string>::const_iterator it;
 	for ( it = components.begin(); it != components.end(); ++it )
@@ -1506,7 +1511,7 @@ string normalize_path(const string& path)
 	return new_path;
 	}
 
-string without_bropath_component(const string& path)
+string without_bropath_component(string_view path)
 	{
 	string rval = normalize_path(path);
 
@@ -1588,7 +1593,7 @@ string find_file(const string& filename, const string& path_set,
 	return string();
 	}
 
-static bool ends_with(const std::string& s, const std::string& ending)
+static bool ends_with(std::string_view s, std::string_view ending)
 	{
 	if ( ending.size() > s.size() )
 		return false;
@@ -1629,15 +1634,15 @@ string find_script_file(const string& filename, const string& path_set)
 	return string();
 	}
 
-FILE* rotate_file(const char* name, RecordVal* rotate_info)
+FILE* rotate_file(string_view name, RecordVal* rotate_info)
 	{
 	// Build file names.
-	const int buflen = strlen(name) + 128;
+	const int buflen = name.size() + 128;
 
 	char newname[buflen], tmpname[buflen+4];
 
 	snprintf(newname, buflen, "%s.%d.%.06f.tmp",
-			name, getpid(), network_time);
+			name.data(), getpid(), network_time);
 	newname[buflen-1] = '\0';
 	strcpy(tmpname, newname);
 	strcat(tmpname, ".tmp");
@@ -1653,9 +1658,9 @@ FILE* rotate_file(const char* name, RecordVal* rotate_info)
 	// Then move old file to "<name>.<pid>.<timestamp>" and make sure
 	// it really gets created.
 	struct stat dummy;
-	if ( link(name, newname) < 0 || stat(newname, &dummy) < 0 )
+	if ( link(name.data(), newname) < 0 || stat(newname, &dummy) < 0 )
 		{
-		reporter->Error("rotate_file: can't move %s to %s: %s", name, newname, strerror(errno));
+		reporter->Error("rotate_file: can't move %s to %s: %s", name.data(), newname, strerror(errno));
 		fclose(newf);
 		unlink(newname);
 		unlink(tmpname);
@@ -1663,9 +1668,9 @@ FILE* rotate_file(const char* name, RecordVal* rotate_info)
 		}
 
 	// Close current file, and move the tmp to its place.
-	if ( unlink(name) < 0 || link(tmpname, name) < 0 || unlink(tmpname) < 0 )
+	if ( unlink(name.data()) < 0 || link(tmpname, name.data()) < 0 || unlink(tmpname) < 0 )
 		{
-		reporter->Error("rotate_file: can't move %s to %s: %s", tmpname, name, strerror(errno));
+		reporter->Error("rotate_file: can't move %s to %s: %s", tmpname, name.data(), strerror(errno));
 		exit(1);	// hard to fix, but shouldn't happen anyway...
 		}
 
@@ -2107,7 +2112,7 @@ TEST_CASE("util canonify_name")
 	CHECK(canonify_name("file name") == "FILE_NAME");
 	}
 
-std::string canonify_name(const std::string& name)
+std::string canonify_name(std::string_view name)
 	{
 	unsigned int len = name.size();
 	std::string nname;
@@ -2191,12 +2196,12 @@ TEST_CASE("util json_escape_utf8")
 	CHECK(json_escape_utf8("string\x82") == "string\\x82");
 	}
 
-string json_escape_utf8(const string& val)
+string json_escape_utf8(std::string_view val)
 	{
 	string result;
 	result.reserve(val.length());
 
-	auto val_data = reinterpret_cast<const unsigned char*>(val.c_str());
+	auto val_data = reinterpret_cast<const unsigned char*>(val.data());
 
 	size_t idx;
 	for ( idx = 0; idx < val.length(); )

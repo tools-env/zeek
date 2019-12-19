@@ -127,21 +127,21 @@ std::string get_unescaped_string(const std::string& str);
 
 class ODesc;
 
-ODesc* get_escaped_string(ODesc* d, const char* str, size_t len,
+ODesc* get_escaped_string(ODesc* d, std::string_view str, size_t len,
                           bool escape_all);
-std::string get_escaped_string(const char* str, size_t len, bool escape_all);
+std::string get_escaped_string(std::string_view str, size_t len, bool escape_all);
 
-inline std::string get_escaped_string(const std::string& str, bool escape_all)
+inline std::string get_escaped_string(std::string_view str, bool escape_all)
 	{
-	return get_escaped_string(str.data(), str.length(), escape_all);
+	return get_escaped_string(str, str.size(), escape_all);
 	}
 
 std::vector<std::string>* tokenize_string(std::string input,
-					  const std::string& delim,
+					  std::string_view delim,
 					  std::vector<std::string>* rval = 0);
 
 extern char* copy_string(const char* s);
-extern int streq(const char* s1, const char* s2);
+extern bool streq(std::string_view s1, std::string_view s2);
 
 // Returns the character corresponding to the given escape sequence (s points
 // just past the '\'), and updates s to point just beyond the last character
@@ -171,7 +171,7 @@ extern int fputs(int len, const char* s, FILE* fp);
 extern bool is_printable(const char* s, int len);
 
 // Return a lower-cased version of the string.
-extern std::string strtolower(const std::string& s);
+extern std::string strtolower(std::string_view s);
 
 extern const char* fmt_bytes(const char* data, int len);
 
@@ -182,20 +182,20 @@ extern const char* fmt(const char* format, ...)
 	__attribute__((format (printf, 1, 2)));
 extern const char* fmt_access_time(double time);
 
-extern bool ensure_intermediate_dirs(const char* dirname);
-extern bool ensure_dir(const char *dirname);
+extern bool ensure_intermediate_dirs(std::string_view dirname);
+extern bool ensure_dir(std::string_view dirname);
 
 // Returns true if path exists and is a directory.
-bool is_dir(const std::string& path);
+bool is_dir(std::string_view path);
 
 // Returns true if path exists and is a file.
-bool is_file(const std::string& path);
+bool is_file(std::string_view path);
 
 // Replaces all occurences of *o* in *s* with *n*.
-extern std::string strreplace(const std::string& s, const std::string& o, const std::string& n);
+extern std::string strreplace(std::string_view s, std::string_view o, std::string_view n);
 
 // Remove all leading and trailing white space from string.
-extern std::string strstrip(std::string s);
+extern std::string strstrip(std::string_view s);
 
 extern bool hmac_key_set;
 extern uint8_t shared_hmac_md5_key[16];
@@ -265,9 +265,9 @@ extern std::string bro_prefixes();
 
 extern const std::array<std::string, 2> script_extensions;
 
-bool is_package_loader(const std::string& path);
+bool is_package_loader(std::string_view path);
 
-extern void add_to_bro_path(const std::string& dir);
+extern void add_to_bro_path(std::string_view dir);
 
 
 /**
@@ -282,38 +282,39 @@ public:
 
 protected:
 
-	SafePathOp()
-		: result(), error()
-		{ }
-
-	void CheckValid(const char* result, const char* path, bool error_aborts);
+	SafePathOp() = default;
+	void CheckValid(std::string_view op_result, std::string_view path, bool error_aborts);
 
 };
 
 class SafeDirname : public SafePathOp {
 public:
 
+	// These stay as const char* and std::string because string_view crashes if
+	// you send a nullptr to its constructor. We do that in scan.l.
 	explicit SafeDirname(const char* path, bool error_aborts = true);
 	explicit SafeDirname(const std::string& path, bool error_aborts = true);
 
 private:
 
-	void DoFunc(const std::string& path, bool error_aborts = true);
+	void DoFunc(std::string_view path, bool error_aborts = true);
 };
 
 class SafeBasename : public SafePathOp {
 public:
 
+	// These stay as const char* and std::string because string_view crashes if
+	// you send a nullptr to its constructor. We do that in scan.l.
 	explicit SafeBasename(const char* path, bool error_aborts = true);
 	explicit SafeBasename(const std::string& path, bool error_aborts = true);
 
 private:
 
-	void DoFunc(const std::string& path, bool error_aborts = true);
+	void DoFunc(std::string_view path, bool error_aborts = true);
 };
 
 std::string implode_string_vector(const std::vector<std::string>& v,
-                                  const std::string& delim = "\n");
+                                  std::string_view delim = "\n");
 
 /**
  * Flatten a script name by replacing '/' path separators with '.'.
@@ -322,8 +323,8 @@ std::string implode_string_vector(const std::vector<std::string>& v,
  * @param prefix A string to prepend to the flattened script name.
  * @return The flattened script name.
  */
-std::string flatten_script_name(const std::string& name,
-                                const std::string& prefix = "");
+std::string flatten_script_name(std::string_view name,
+                                std::string_view prefix = "");
 
 /**
  * Return a canonical/shortened path string by removing superfluous elements
@@ -331,14 +332,14 @@ std::string flatten_script_name(const std::string& name,
  * @param path A filesystem path.
  * @return A canonical/shortened version of \a path.
  */
-std::string normalize_path(const std::string& path);
+std::string normalize_path(std::string_view path);
 
 /**
  * Strip the ZEEKPATH component from a path.
  * @param path A file/directory path that may be within a ZEEKPATH component.
  * @return *path* minus the common ZEEKPATH component (if any) removed.
  */
-std::string without_bropath_component(const std::string& path);
+std::string without_bropath_component(std::string_view path);
 
 /**
  * Locate a file within a given search path.
@@ -359,7 +360,7 @@ std::string find_file(const std::string& filename, const std::string& path_set,
 std::string find_script_file(const std::string& filename, const std::string& path_set);
 
 // Wrapper around fopen(3).  Emits an error when failing to open.
-FILE* open_file(const std::string& path, const std::string& mode = "r");
+FILE* open_file(std::string_view path, std::string_view mode = "r");
 
 /** Opens a Bro script package.
  * @param path Location of a Bro script package (a directory).  Will be changed
@@ -368,16 +369,16 @@ FILE* open_file(const std::string& path, const std::string& mode = "r");
  * @return The return value of fopen(3) on the loader script or null if one
  *         doesn't exist.
  */
-FILE* open_package(std::string& path, const std::string& mode = "r");
+FILE* open_package(std::string& path, std::string_view mode = "r");
 
 // Renames the given file to a new temporary name, and opens a new file with
 // the original name. Returns new file or NULL on error. Inits rotate_info if
 // given (open time is set network time).
 class RecordVal;
-extern FILE* rotate_file(const char* name, RecordVal* rotate_info);
+extern FILE* rotate_file(std::string_view name, RecordVal* rotate_info);
 
 // This mimics the script-level function with the same name.
-const char* log_file_name(const char* tag);
+const char* log_file_name(std::string_view tag);
 
 // Parse a time string of the form "HH:MM" (as used for the rotation base
 // time) into a double representing the number of seconds. Returns -1 if the
@@ -551,7 +552,7 @@ struct CompareString
  * @param name The string to canonicalize.
  * @return The canonicalized version of \a name which caller may later delete[].
  */
-std::string canonify_name(const std::string& name);
+std::string canonify_name(std::string_view name);
 
 /**
  * Reentrant version of strerror(). Takes care of the difference between the
@@ -571,4 +572,4 @@ char* zeekenv(const char* name);
  * @param val the input string to be escaped
  * @return the escaped string
  */
-std::string json_escape_utf8(const std::string& val);
+std::string json_escape_utf8(std::string_view val);

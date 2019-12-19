@@ -317,7 +317,7 @@ string ScriptInfo::DoReStructuredText(bool roles_only) const
 			string path = find_script_file(*it, bro_path());
 			string doc = *it;
 
-			if ( ! path.empty() && is_dir(path.c_str()) )
+			if ( ! path.empty() && is_dir(path) )
 				// Reference the package.
 				doc += "/index";
 
@@ -387,5 +387,3 @@ time_t ScriptInfo::DoGetModificationTime() const
 
 	return most_recent;
 	}
-
-

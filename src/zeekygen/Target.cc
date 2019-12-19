@@ -193,7 +193,7 @@ TargetFile::TargetFile(const string& arg_name)
 		{
 		string dir = SafeDirname(name).result;
 
-		if ( ! ensure_intermediate_dirs(dir.c_str()) )
+		if ( ! ensure_intermediate_dirs(dir) )
 			reporter->FatalError("Zeekygen failed to make dir %s",
 			                     dir.c_str());
 		}
