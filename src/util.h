@@ -289,28 +289,12 @@ protected:
 
 class SafeDirname : public SafePathOp {
 public:
-
-	// These stay as const char* and std::string because string_view crashes if
-	// you send a nullptr to its constructor. We do that in scan.l.
-	explicit SafeDirname(const char* path, bool error_aborts = true);
-	explicit SafeDirname(const std::string& path, bool error_aborts = true);
-
-private:
-
-	void DoFunc(std::string_view path, bool error_aborts = true);
+	SafeDirname(std::string_view path, bool error_aborts = true);
 };
 
 class SafeBasename : public SafePathOp {
 public:
-
-	// These stay as const char* and std::string because string_view crashes if
-	// you send a nullptr to its constructor. We do that in scan.l.
-	explicit SafeBasename(const char* path, bool error_aborts = true);
-	explicit SafeBasename(const std::string& path, bool error_aborts = true);
-
-private:
-
-	void DoFunc(std::string_view path, bool error_aborts = true);
+	explicit SafeBasename(std::string_view path, bool error_aborts = true);
 };
 
 std::string implode_string_vector(const std::vector<std::string>& v,

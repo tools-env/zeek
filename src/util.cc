@@ -1240,7 +1240,7 @@ const array<string, 2> script_extensions = {".zeek", ".bro"};
 
 bool is_package_loader(string_view path)
 	{
-	string filename = std::move(SafeBasename(path.data()).result);
+	string filename = std::move(SafeBasename(path).result);
 
 	for ( const string& ext : script_extensions )
 		{
@@ -1339,38 +1339,16 @@ void SafePathOp::CheckValid(std::string_view op_result, std::string_view path,
 		}
 	}
 
-SafeDirname::SafeDirname(const char* path, bool error_aborts)
+SafeDirname::SafeDirname(string_view path, bool error_aborts)
 	: SafePathOp()
-	{
-	DoFunc(path ? path : "", error_aborts);
-	}
-
-SafeDirname::SafeDirname(const string& path, bool error_aborts)
-	: SafePathOp()
-	{
-	DoFunc(path, error_aborts);
-	}
-
-void SafeDirname::DoFunc(string_view path, bool error_aborts)
 	{
 	char* tmp = copy_string(path.data());
 	CheckValid(dirname(tmp), tmp, error_aborts);
 	delete [] tmp;
 	}
 
-SafeBasename::SafeBasename(const char* path, bool error_aborts)
+SafeBasename::SafeBasename(string_view path, bool error_aborts)
 	: SafePathOp()
-	{
-	DoFunc(path ? path : "", error_aborts);
-	}
-
-SafeBasename::SafeBasename(const string& path, bool error_aborts)
-	: SafePathOp()
-	{
-	DoFunc(path, error_aborts);
-	}
-
-void SafeBasename::DoFunc(string_view path, bool error_aborts)
 	{
 	char* tmp = copy_string(path.data());
 	CheckValid(basename(tmp), tmp, error_aborts);
