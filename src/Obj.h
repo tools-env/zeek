@@ -16,19 +16,11 @@ public:
 		last_line = line_l;
 		first_column = col_f;
 		last_column = col_l;
-		delete_data = false;
-
-		timestamp = 0;
-		text = 0;
 		}
 
 	Location()
 		{
-		filename = 0;
 		first_line = last_line = first_column = last_column = 0;
-		delete_data = false;
-		timestamp = 0;
-		text = 0;
 		}
 
 	virtual ~Location()
@@ -46,11 +38,11 @@ public:
 	const char* filename;
 	int first_line, last_line;
 	int first_column, last_column;
-	bool delete_data;
+	bool delete_data = false;
 
 	// Timestamp and text for compatibility with Bison's default yyltype.
-	int timestamp;
-	char* text;
+	int timestamp = 0;
+	char* text = nullptr;
 };
 
 #define YYLTYPE yyltype
@@ -106,22 +98,22 @@ public:
 	// Report user warnings/errors.  If obj2 is given, then it's
 	// included in the message, though if pinpoint_only is non-zero,
 	// then obj2 is only used to pinpoint the location.
-	void Warn(const char* msg, const BroObj* obj2 = 0,
+	void Warn(std::string_view msg, const BroObj* obj2 = 0,
 			int pinpoint_only = 0, const Location* expr_location = 0) const;
-	void Error(const char* msg, const BroObj* obj2 = 0,
+	void Error(std::string_view msg, const BroObj* obj2 = 0,
 			int pinpoint_only = 0, const Location* expr_location = 0) const;
 
 	// Report internal errors.
-	void BadTag(const char* msg, const char* t1 = 0,
-			const char* t2 = 0) const;
+	void BadTag(std::string_view msg, std::string_view t1 = "",
+			std::string_view t2 = "") const;
 #define CHECK_TAG(t1, t2, text, tag_to_text_func) \
 	{ \
 	if ( t1 != t2 ) \
 		BadTag(text, tag_to_text_func(t1), tag_to_text_func(t2)); \
 	}
 
-	void Internal(const char* msg) const;
-	void InternalWarning(const char* msg) const;
+	void Internal(std::string_view msg) const;
+	void InternalWarning(std::string_view msg) const;
 
 	virtual void Describe(ODesc* d) const { /* FIXME: Add code */ };
 
@@ -160,7 +152,7 @@ protected:
 private:
 	friend class SuppressErrors;
 
-	void DoMsg(ODesc* d, const char s1[], const BroObj* obj2 = 0,
+	void DoMsg(ODesc* d, std::string_view s1, const BroObj* obj2 = 0,
 			int pinpoint_only = 0, const Location* expr_location = 0) const;
 	void PinPoint(ODesc* d, const BroObj* obj2 = 0,
 			int pinpoint_only = 0) const;
@@ -183,7 +175,7 @@ extern void bad_ref(int type);
 
 // Sometimes useful when dealing with BroObj subclasses that have their
 // own (protected) versions of Error.
-inline void Error(const BroObj* o, const char* msg)
+inline void Error(const BroObj* o, std::string_view msg)
 	{
 	o->Error(msg);
 	}

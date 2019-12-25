@@ -672,14 +672,14 @@ void BuiltinFunc::Describe(ODesc* d) const
 	d->AddCount(is_pure);
 	}
 
-void builtin_error(const char* msg, BroObj* arg)
+void builtin_error(string_view msg, BroObj* arg)
 	{
 	auto emit = [=](const CallExpr* ce)
 		{
 		if ( ce )
-			ce->Error(msg, arg);
+			ce->Error(msg.data(), arg);
 		else
-			reporter->Error(msg, arg);
+			reporter->Error(msg.data(), arg);
 		};
 
 

@@ -184,7 +184,7 @@ protected:
 };
 
 
-extern void builtin_error(const char* msg, BroObj* arg = 0);
+extern void builtin_error(std::string_view msg, BroObj* arg = 0);
 extern void init_builtin_funcs();
 extern void init_builtin_funcs_subdirs();
 
