@@ -41,15 +41,7 @@ BroString::BroString(const u_char* str, int arg_n, int add_NUL)
 	Set(str, arg_n, add_NUL);
 	}
 
-BroString::BroString(const char* str)
-	{
-	b = 0;
-	n = 0;
-	use_free_to_delete = 0;
-	Set(str);
-	}
-
-BroString::BroString(const string &str)
+BroString::BroString(string_view str)
 	{
 	b = 0;
 	n = 0;
@@ -137,24 +129,13 @@ void BroString::Set(const u_char* str, int len, int add_NUL)
 	use_free_to_delete = 0;
 	}
 
-void BroString::Set(const char* str)
-	{
-	Reset();
-
-	n = strlen(str);
-	b = new u_char[n+1];
-	memcpy(b, str, n+1);
-	final_NUL = 1;
-	use_free_to_delete = 0;
-	}
-
-void BroString::Set(const string& str)
+void BroString::Set(string_view str)
 	{
 	Reset();
 
 	n = str.size();
 	b = new u_char[n+1];
-	memcpy(b, str.c_str(), n+1);
+	memcpy(b, str.data(), n+1);
 	final_NUL = 1;
 	use_free_to_delete = 0;
 	}

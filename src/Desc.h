@@ -55,16 +55,12 @@ public:
 
 	void EnableEscaping();
 	void EnableUTF8();
-	void AddEscapeSequence(const char* s) { escape_sequences.insert(s); }
+	void AddEscapeSequence(std::string_view s) { escape_sequences.insert(std::string(s)); }
 	void AddEscapeSequence(const char* s, size_t n)
 	    { escape_sequences.insert(std::string(s, n)); }
-	void AddEscapeSequence(const std::string & s)
-	    { escape_sequences.insert(s); }
-	void RemoveEscapeSequence(const char* s) { escape_sequences.erase(s); }
+	void RemoveEscapeSequence(std::string_view s) { escape_sequences.erase(std::string(s)); }
 	void RemoveEscapeSequence(const char* s, size_t n)
 	    { escape_sequences.erase(std::string(s, n)); }
-	void RemoveEscapeSequence(const std::string & s)
-	    { escape_sequences.erase(s); }
 
 	void PushIndent();
 	void PopIndent();
@@ -91,14 +87,14 @@ public:
 
 	void AddBytes(const BroString* s);
 
-	void Add(const char* s1, const char* s2)
-		{ Add(s1); Add(s2); }
+	void Add(std::string_view s1, std::string_view s2)
+		{ Add(s1.data()); Add(s2.data()); }
 
-	void AddSP(const char* s1, const char* s2)
-		{ Add(s1); AddSP(s2); }
+	void AddSP(std::string_view s1, std::string_view s2)
+		{ Add(s1.data()); AddSP(s2.data()); }
 
-	void AddSP(const char* s )
-		{ Add(s); SP(); }
+	void AddSP(std::string_view s)
+		{ Add(s.data()); SP(); }
 
 	void AddCount(bro_int_t n)
 		{
